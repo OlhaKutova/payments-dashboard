@@ -9,7 +9,7 @@ import { I18N } from "../constants/i18n.ts";
 interface UsePaymentsParams {
   page: number;
   pageSize: number;
-  search?: string;
+  searchQuery?: string;
   currency?: string;
 }
 
@@ -22,6 +22,7 @@ interface UsePaymentsResult {
 export const usePayments = ({
   page,
   pageSize,
+  searchQuery,
 }: UsePaymentsParams): UsePaymentsResult => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,7 +36,7 @@ export const usePayments = ({
         setIsLoading(true);
         setError(null);
 
-        const data = await fetchPayments(page, pageSize);
+        const data = await fetchPayments(page, pageSize, searchQuery);
         if (!isMounted) return;
 
         setPayments(data?.payments ?? []);
@@ -43,17 +44,17 @@ export const usePayments = ({
         if (!isMounted) return;
 
         if (!isProd) {
-          console.error(I18N.API_REQUEST_FAILED, err, { page, pageSize });
+          console.error(I18N.API_REQUEST_FAILED, err, { page, pageSize, searchQuery });
         }
 
         let errorMsg:string = I18N.SOMETHING_WENT_WRONG;
 
         if (isAxiosError(err)) {
           const status = err.response?.status;
+
           if (status === 404) {
             errorMsg = I18N.PAYMENT_NOT_FOUND;
-          }
-          else if (status === 500) {
+          } else if (status === 500) {
             errorMsg = I18N.INTERNAL_SERVER_ERROR;
           }
         }
@@ -72,7 +73,7 @@ export const usePayments = ({
     return () => {
       isMounted = false;
     };
-  }, [page, pageSize]);
+  }, [page, pageSize, searchQuery]);
 
   return { payments, isLoading, error };
 };

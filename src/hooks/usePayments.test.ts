@@ -25,14 +25,12 @@ vi.mock("../api/payments", () => ({
   fetchPayments: vi.fn(),
 }));
 
-const mockedFetchPayments = fetchPayments as MockedFunction<
-  typeof fetchPayments
->;
+const mockedFetchPayments = fetchPayments as MockedFunction<typeof fetchPayments>;
+
+const page = 1;
+const pageSize = 5;
 
 describe("usePayments", () => {
-  const page = 1;
-  const pageSize = 5;
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -68,7 +66,7 @@ describe("usePayments", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockedFetchPayments).toHaveBeenCalledWith(page, pageSize);
+    expect(mockedFetchPayments).toHaveBeenCalledWith(page, pageSize, undefined);
     expect(result.current.error).toBeNull();
     expect(result.current.payments).toEqual(mockPayments);
   });
@@ -122,5 +120,61 @@ describe("usePayments", () => {
 
     expect(result.current.payments).toEqual([]);
     expect(result.current.error).toBe(I18N.SOMETHING_WENT_WRONG);
+  });
+
+  describe("searchQuery - paymentId", () => {
+    it("calls fetchPayments with exact paymentId and returns payment if found", async () => {
+      const searchQuery = "pay_134_2";
+      const mockPayments: Payment[] = [
+        {
+          id: "pay_134_2",
+          customerName: "Bob Red",
+          amount: 150.5,
+          customerAddress: "202 Red Ave, Paris, France",
+          currency: "EUR",
+          status: PAYMENT_STATUS.PENDING,
+          date: "2024-04-15T11:00:00Z",
+          description: "Product purchase",
+        },
+      ];
+
+      mockedFetchPayments.mockResolvedValue({
+        payments: mockPayments,
+        total: 1,
+        page,
+        pageSize,
+      });
+
+      const { result } = renderHook(() =>
+        usePayments({ page, pageSize, searchQuery })
+      );
+
+      expect(result.current.isLoading).toBe(true);
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      expect(mockedFetchPayments).toHaveBeenCalledWith(page, pageSize, searchQuery);
+      expect(result.current.error).toBeNull();
+      expect(result.current.payments).toEqual(mockPayments);
+    });
+
+    it(`sets ${I18N.PAYMENT_NOT_FOUND} error when paymentId does not exist`, async () => {
+      const searchQuery = "pay_134_585858585";
+      const error404 = {
+        isAxiosError: true,
+        response: { status: 404 },
+      };
+
+      mockedFetchPayments.mockRejectedValue(error404);
+
+      const { result } = renderHook(() =>
+        usePayments({ page, pageSize, searchQuery })
+      );
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      expect(mockedFetchPayments).toHaveBeenCalledWith(page, pageSize, searchQuery);
+      expect(result.current.error).toBe(I18N.PAYMENT_NOT_FOUND);
+      expect(result.current.payments).toEqual([]);
+    });
   });
 });

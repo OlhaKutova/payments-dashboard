@@ -1,7 +1,8 @@
-import { JSX } from "react";
+import { useState } from "react";
 
 import { I18N } from "../constants/i18n";
 import { usePayments } from "../hooks/usePayments";
+import { SearchBar } from "./SearchBar";
 
 import {
   Container,
@@ -13,15 +14,23 @@ import {
 } from "./components";
 import { PaymentsTable } from "./PaymentsTable";
 
-export const PaymentsPage = (): JSX.Element => {
+export const PaymentsPage = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+
   const page = 1;
   const pageSize = 5;
 
-  const { payments, isLoading, error } = usePayments({ page, pageSize });
+  const { payments, isLoading, error } = usePayments({
+    page,
+    pageSize,
+    searchQuery,
+  });
 
   return (
     <Container>
       <Title>{I18N.PAGE_TITLE}</Title>
+
+      <SearchBar onSearch={setSearchQuery} />
 
       <TableWrapper aria-label={I18N.PAGE_TITLE}>
         {isLoading ? (

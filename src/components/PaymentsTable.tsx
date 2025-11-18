@@ -1,4 +1,4 @@
-import React, { JSX } from "react";
+import React from "react";
 
 import { I18N } from "../constants/i18n";
 import {
@@ -80,7 +80,7 @@ interface PaymentsTableProps {
   rows: Payment[];
 }
 
-export const PaymentsTable = ({ rows }: PaymentsTableProps): JSX.Element => (
+export const PaymentsTable = ({ rows }: PaymentsTableProps) => (
   <Table>
     <TableHeaderWrapper>
       <TableHeaderRow>
