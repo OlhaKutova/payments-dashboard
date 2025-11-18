@@ -9,6 +9,7 @@ export const I18N = {
   
   // Search and filter labels
   SEARCH_PLACEHOLDER: "Enter payment ID",
+  SEARCH_INPUT_ARIA: "Search payment by ID",
   SEARCH_LABEL: "Search payments",
   CURRENCY_FILTER_LABEL: "Filter by currency",
   
