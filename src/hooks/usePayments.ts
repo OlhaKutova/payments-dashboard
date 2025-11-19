@@ -4,7 +4,7 @@ import { isAxiosError } from "axios";
 import { fetchPayments } from "../api/payments";
 import type { Payment } from "../types/payment";
 import { isProd } from "../constants/env";
-import { I18N } from "../constants/i18n.ts";
+import { I18N } from "../constants/i18n";
 
 interface UsePaymentsParams {
   page: number;
@@ -24,7 +24,7 @@ export const usePayments = ({
   filters,
 }: UsePaymentsParams): UsePaymentsResult => {
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,21 +43,23 @@ export const usePayments = ({
         if (!isMounted) return;
 
         if (!isProd) {
-          console.error(I18N.API_REQUEST_FAILED, err, { page, pageSize, ...filters });
+          console.error(I18N.API_REQUEST_FAILED, err, {
+            page,
+            pageSize,
+            ...filters,
+          });
         }
 
-        let errorMsg: string = I18N.SOMETHING_WENT_WRONG;
+        let message:string = I18N.SOMETHING_WENT_WRONG;
 
         if (isAxiosError(err)) {
           const status = err.response?.status;
-          if (status === 404) {
-            errorMsg = I18N.PAYMENT_NOT_FOUND;
-          } else if (status === 500) {
-            errorMsg = I18N.INTERNAL_SERVER_ERROR;
-          }
+
+          if (status === 404) message = I18N.PAYMENT_NOT_FOUND;
+          if (status === 500) message = I18N.INTERNAL_SERVER_ERROR;
         }
 
-        setError(errorMsg);
+        setError(message);
         setPayments([]);
       } finally {
         if (isMounted) setIsLoading(false);

@@ -1,46 +1,72 @@
-import { I18N } from "../constants/i18n";
 import {
   FilterRow,
   SearchInput,
   SearchButton,
   ClearButton,
 } from "./components";
+import { SelectField } from "./SelectField";
 
 type Filters = Record<string, string>;
 
+interface SearchConfig {
+  key: string;
+  ariaLabel: string;
+  placeholder: string;
+  buttonLabel: string;
+}
+
+interface SelectConfig {
+  key: string;
+  ariaLabel: string;
+  placeholder: string;
+  options: string[];
+}
+
 interface SearchFiltersBarProps {
+  search: SearchConfig;
+  select: SelectConfig;
   filters: Filters;
-  searchKey: string;
   onFilterChange: (key: string, value: string) => void;
   hasActiveFilters: boolean;
   onClearFilters: () => void;
   onSearch: () => void;
+  clearButtonLabel: string;
 }
 
 export const SearchFiltersBar = ({
   filters,
-  searchKey,
   onFilterChange,
-  hasActiveFilters,
-  onClearFilters,
   onSearch,
+  onClearFilters,
+  hasActiveFilters,
+  clearButtonLabel,
+  search,
+  select,
 }: SearchFiltersBarProps) => {
   return (
     <FilterRow>
       <SearchInput
-        aria-label={I18N.SEARCH_INPUT_ARIA}
-        placeholder={I18N.SEARCH_PLACEHOLDER}
-        value={filters[searchKey] ?? ""}
-        onChange={(e) => onFilterChange(searchKey, e.target.value)}
+        aria-label={search.ariaLabel}
+        placeholder={search.placeholder}
+        value={filters[search.key] ?? ""}
+        onChange={(e) => onFilterChange(search.key, e.target.value)}
+      />
+
+      <SelectField
+        ariaLabel={select.ariaLabel}
+        value={filters[select.key] ?? ""}
+        placeholder={select.placeholder}
+        options={select.options}
+        onChange={(value) => onFilterChange(select.key, value)}
       />
 
       <SearchButton onClick={onSearch}>
-        {I18N.SEARCH_BUTTON}
+        {search.buttonLabel}
       </SearchButton>
 
       {hasActiveFilters && (
         <ClearButton onClick={onClearFilters}>
-          {I18N.CLEAR_FILTERS}
+          {clearButtonLabel}
         </ClearButton>
       )}
     </FilterRow>
