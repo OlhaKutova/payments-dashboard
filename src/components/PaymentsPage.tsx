@@ -48,13 +48,14 @@ export const PaymentsPage = () => {
   };
 
   const handleClearFilters = () => {
-    setFilters({...INITIAL_FILTERS})
-    setAppliedFilters({...INITIAL_FILTERS});
+    setFilters({ ...INITIAL_FILTERS });
+    setAppliedFilters({ ...INITIAL_FILTERS });
   };
 
   return (
     <Container>
       <Title>{I18N.PAGE_TITLE}</Title>
+
       <SearchFiltersBar
         filters={filters}
         searchKey={PAYMENT_FILTERS.SEARCH}
@@ -63,19 +64,26 @@ export const PaymentsPage = () => {
         onClearFilters={handleClearFilters}
         onSearch={handleSearch}
       />
-      <TableWrapper aria-label={I18N.PAGE_TITLE}>
-        {isLoading ? (
-          <div className="flex justify-center items-center p-4">
-            <Spinner aria-label="Loading payments" />
-          </div>
-        ) : error ? (
-          <ErrorBox role="alert">{error}</ErrorBox>
-        ) : payments.length === 0 ? (
-          <EmptyBox>{I18N.NO_PAYMENTS_FOUND}</EmptyBox>
-        ) : (
-          <PaymentsTable rows={payments} />
-        )}
-      </TableWrapper>
+
+      {!error && (
+        <TableWrapper aria-label={I18N.PAGE_TITLE}>
+          {isLoading ? (
+            <div className="flex justify-center items-center p-4">
+              <Spinner aria-label="Loading payments" />
+            </div>
+          ) : payments.length === 0 ? (
+            <EmptyBox>{I18N.NO_PAYMENTS_FOUND}</EmptyBox>
+          ) : (
+            <PaymentsTable rows={payments} />
+          )}
+        </TableWrapper>
+      )}
+
+      {error && (
+        <ErrorBox role="alert" className="mt-4">
+          {error}
+        </ErrorBox>
+      )}
     </Container>
   );
 };
