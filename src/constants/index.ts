@@ -3,6 +3,7 @@ import type { Locale } from "date-fns";
 
 export const API_URL = "/api/payments";
 export const HTTP_REQUEST_TIMEOUT_MS = 10_000;
+export const PAGE_SIZE = 5;
 
 export const DEFAULT_LOCALE: {
   code: string;

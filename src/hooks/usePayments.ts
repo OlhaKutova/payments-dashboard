@@ -14,6 +14,7 @@ interface UsePaymentsParams {
 
 interface UsePaymentsResult {
   payments: Payment[];
+  total: number;
   isLoading: boolean;
   error: string | null;
 }
@@ -24,6 +25,7 @@ export const usePayments = ({
   filters,
 }: UsePaymentsParams): UsePaymentsResult => {
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,6 +41,7 @@ export const usePayments = ({
         if (!isMounted) return;
 
         setPayments(data?.payments ?? []);
+        setTotal(data?.total ?? 0);
       } catch (err) {
         if (!isMounted) return;
 
@@ -50,7 +53,7 @@ export const usePayments = ({
           });
         }
 
-        let message:string = I18N.SOMETHING_WENT_WRONG;
+        let message: string = I18N.SOMETHING_WENT_WRONG;
 
         if (isAxiosError(err)) {
           const status = err.response?.status;
@@ -61,6 +64,7 @@ export const usePayments = ({
 
         setError(message);
         setPayments([]);
+        setTotal(0);
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -73,5 +77,5 @@ export const usePayments = ({
     };
   }, [page, pageSize, filters]);
 
-  return { payments, isLoading, error };
+  return { payments, total, isLoading, error };
 };

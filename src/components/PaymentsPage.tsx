@@ -12,9 +12,12 @@ import {
   Spinner,
   ErrorBox,
   EmptyBox,
+  PaginationRow,
+  PaginationButton,
 } from "./components";
 import { SearchFiltersBar } from "./SearchFiltersBar";
 import { PaymentsTable } from "./PaymentsTable";
+import { PAGE_SIZE } from "../constants";
 
 type Filters = Record<string, string>;
 
@@ -28,31 +31,47 @@ export const PaymentsPage = () => {
   const [appliedFilters, setAppliedFilters] = useState<Filters>({
     ...INITIAL_FILTERS,
   });
-
-  const page = 1;
-  const pageSize = 5;
+  const [page, setPage] = useState(1);
 
   const hasActiveFilters = Object.values(filters).some(
     (val) => val.trim() !== ""
   );
 
-  const { payments, isLoading, error } = usePayments({
+  const { payments, isLoading, error, total } = usePayments({
     page,
-    pageSize,
+    pageSize: PAGE_SIZE,
     filters: appliedFilters,
   });
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const isFirstPage = page === 1;
+  const isLastPage = page >= totalPages;
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleApplyFilters = () => {
+    setPage(1);
     setAppliedFilters(filters);
   };
 
   const handleClearFilters = () => {
     setFilters({ ...INITIAL_FILTERS });
     setAppliedFilters({ ...INITIAL_FILTERS });
+    setPage(1);
+  };
+
+  const handleNextPage = () => {
+    if (!isLastPage) {
+      setPage((prev) => prev + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (!isFirstPage) {
+      setPage((prev) => prev - 1);
+    }
   };
 
   return (
@@ -89,7 +108,33 @@ export const PaymentsPage = () => {
           ) : payments.length === 0 ? (
             <EmptyBox>{I18N.NO_PAYMENTS_FOUND}</EmptyBox>
           ) : (
-            <PaymentsTable rows={payments} />
+            <>
+              <PaymentsTable rows={payments} />
+
+              <PaginationRow>
+                <PaginationButton
+                  type="button"
+                  onClick={handlePreviousPage}
+                  disabled={isFirstPage || isLoading}
+                  aria-label={I18N.PREVIOUS_BUTTON}
+                >
+                  {I18N.PREVIOUS_BUTTON}
+                </PaginationButton>
+
+                <span>
+                  {I18N.PAGE_LABEL} {page}
+                </span>
+
+                <PaginationButton
+                  type="button"
+                  onClick={handleNextPage}
+                  disabled={isLastPage || isLoading}
+                  aria-label={I18N.NEXT_BUTTON}
+                >
+                  {I18N.NEXT_BUTTON}
+                </PaginationButton>
+              </PaginationRow>
+            </>
           )}
         </TableWrapper>
       )}
