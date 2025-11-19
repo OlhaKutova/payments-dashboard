@@ -1,9 +1,8 @@
 import { useState } from "react";
-
 import { I18N } from "../constants/i18n";
 import { usePayments } from "../hooks/usePayments";
-import { SearchBar } from "./SearchBar";
-
+import { SearchFiltersBar } from "./SearchFiltersBar";
+import { PAYMENT_FILTERS } from "../constants/filters";
 import {
   Container,
   Title,
@@ -14,24 +13,56 @@ import {
 } from "./components";
 import { PaymentsTable } from "./PaymentsTable";
 
+type Filters = Record<string, string>;
+
+const INITIAL_FILTERS: Filters = {
+  [PAYMENT_FILTERS.SEARCH]: "",
+  [PAYMENT_FILTERS.CURRENCY]: "",
+};
+
 export const PaymentsPage = () => {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState<Filters>({ ...INITIAL_FILTERS });
+  const [appliedFilters, setAppliedFilters] = useState<Filters>({
+    ...INITIAL_FILTERS,
+  });
 
   const page = 1;
   const pageSize = 5;
 
+  const hasActiveFilters = Object.values(filters).some(
+    (val) => val.trim() !== ""
+  );
+
   const { payments, isLoading, error } = usePayments({
     page,
     pageSize,
-    searchQuery,
+    filters: appliedFilters,
   });
+
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSearch = () => {
+    setAppliedFilters(filters);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({...INITIAL_FILTERS})
+    setAppliedFilters({...INITIAL_FILTERS});
+  };
 
   return (
     <Container>
       <Title>{I18N.PAGE_TITLE}</Title>
-
-      <SearchBar onSearch={setSearchQuery} />
-
+      <SearchFiltersBar
+        filters={filters}
+        searchKey={PAYMENT_FILTERS.SEARCH}
+        onFilterChange={handleFilterChange}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={handleClearFilters}
+        onSearch={handleSearch}
+      />
       <TableWrapper aria-label={I18N.PAGE_TITLE}>
         {isLoading ? (
           <div className="flex justify-center items-center p-4">
