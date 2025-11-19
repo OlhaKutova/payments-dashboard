@@ -8,6 +8,7 @@ export const I18N = {
   PAGE_TITLE: "All payments",
   
   // Search and filter labels
+  LOADING_PAYMENTS: "Loading payments",
   SEARCH_PLACEHOLDER: "Enter payment ID",
   SEARCH_INPUT_ARIA: "Search payment by ID",
   SEARCH_LABEL: "Search payments",
