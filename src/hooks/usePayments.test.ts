@@ -25,10 +25,13 @@ vi.mock("../api/payments", () => ({
   fetchPayments: vi.fn(),
 }));
 
-const mockedFetchPayments = fetchPayments as MockedFunction<typeof fetchPayments>;
+const mockedFetchPayments = fetchPayments as MockedFunction<
+  typeof fetchPayments
+>;
 
 const page = 1;
 const pageSize = 5;
+const emptyFilters: Record<string, string> = {};
 
 describe("usePayments", () => {
   beforeEach(() => {
@@ -56,7 +59,9 @@ describe("usePayments", () => {
       pageSize,
     });
 
-    const { result } = renderHook(() => usePayments({ page, pageSize }));
+    const { result } = renderHook(() =>
+      usePayments({ page, pageSize, filters: emptyFilters })
+    );
 
     expect(result.current.isLoading).toBe(true);
     expect(result.current.payments).toEqual([]);
@@ -66,7 +71,11 @@ describe("usePayments", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockedFetchPayments).toHaveBeenCalledWith(page, pageSize, undefined);
+    expect(mockedFetchPayments).toHaveBeenCalledWith(
+      page,
+      pageSize,
+      emptyFilters
+    );
     expect(result.current.error).toBeNull();
     expect(result.current.payments).toEqual(mockPayments);
   });
@@ -79,7 +88,9 @@ describe("usePayments", () => {
 
     mockedFetchPayments.mockRejectedValue(error404);
 
-    const { result } = renderHook(() => usePayments({ page, pageSize }));
+    const { result } = renderHook(() =>
+      usePayments({ page, pageSize, filters: emptyFilters })
+    );
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -97,7 +108,9 @@ describe("usePayments", () => {
 
     mockedFetchPayments.mockRejectedValue(error500);
 
-    const { result } = renderHook(() => usePayments({ page, pageSize }));
+    const { result } = renderHook(() =>
+      usePayments({ page, pageSize, filters: emptyFilters })
+    );
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -112,7 +125,9 @@ describe("usePayments", () => {
 
     mockedFetchPayments.mockRejectedValue(genericError);
 
-    const { result } = renderHook(() => usePayments({ page, pageSize }));
+    const { result } = renderHook(() =>
+      usePayments({ page, pageSize, filters: emptyFilters })
+    );
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -122,9 +137,11 @@ describe("usePayments", () => {
     expect(result.current.error).toBe(I18N.SOMETHING_WENT_WRONG);
   });
 
-  describe("searchQuery - paymentId", () => {
+  describe("filters.search - paymentId", () => {
     it("calls fetchPayments with exact paymentId and returns payment if found", async () => {
-      const searchQuery = "pay_134_2";
+      const search = "pay_134_2";
+      const filters = { search };
+
       const mockPayments: Payment[] = [
         {
           id: "pay_134_2",
@@ -146,19 +163,21 @@ describe("usePayments", () => {
       });
 
       const { result } = renderHook(() =>
-        usePayments({ page, pageSize, searchQuery })
+        usePayments({ page, pageSize, filters })
       );
 
       expect(result.current.isLoading).toBe(true);
       await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-      expect(mockedFetchPayments).toHaveBeenCalledWith(page, pageSize, searchQuery);
+      expect(mockedFetchPayments).toHaveBeenCalledWith(page, pageSize, filters);
       expect(result.current.error).toBeNull();
       expect(result.current.payments).toEqual(mockPayments);
     });
 
     it(`sets ${I18N.PAYMENT_NOT_FOUND} error when paymentId does not exist`, async () => {
-      const searchQuery = "pay_134_585858585";
+      const search = "pay_134_585858585";
+      const filters = { search };
+
       const error404 = {
         isAxiosError: true,
         response: { status: 404 },
@@ -167,13 +186,72 @@ describe("usePayments", () => {
       mockedFetchPayments.mockRejectedValue(error404);
 
       const { result } = renderHook(() =>
-        usePayments({ page, pageSize, searchQuery })
+        usePayments({ page, pageSize, filters })
       );
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-      expect(mockedFetchPayments).toHaveBeenCalledWith(page, pageSize, searchQuery);
+      expect(mockedFetchPayments).toHaveBeenCalledWith(page, pageSize, filters);
       expect(result.current.error).toBe(I18N.PAYMENT_NOT_FOUND);
+      expect(result.current.payments).toEqual([]);
+    });
+  });
+
+  describe("filters clearing", () => {
+    it("refetches payments when filters change from search to empty (clear filters)", async () => {
+      const initialFilters: Record<string, string> = { search: "pay_134_2" };
+      const clearedFilters: Record<string, string> = {};
+
+      const mockPayments: Payment[] = [
+        {
+          id: "pay_134_2",
+          customerName: "Bob Red",
+          amount: 150.5,
+          customerAddress: "202 Red Ave, Paris, France",
+          currency: "EUR",
+          status: PAYMENT_STATUS.COMPLETED,
+          date: "2024-04-15T11:00:00Z",
+          description: "Product purchase",
+        },
+      ];
+
+      mockedFetchPayments.mockResolvedValueOnce({
+        payments: mockPayments,
+        total: 1,
+        page,
+        pageSize,
+      });
+
+      const { result, rerender } = renderHook(
+        (props: { page: number; pageSize: number; filters: Record<string, string> }) =>
+          usePayments(props),
+        {
+          initialProps: { page, pageSize, filters: initialFilters },
+        }
+      );
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      expect(mockedFetchPayments).toHaveBeenLastCalledWith(
+        page,
+        pageSize,
+        initialFilters
+      );
+
+      mockedFetchPayments.mockResolvedValueOnce({
+        payments: [],
+        total: 0,
+        page,
+        pageSize,
+      });
+
+      rerender({ page, pageSize, filters: clearedFilters });
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      expect(mockedFetchPayments).toHaveBeenLastCalledWith(
+        page,
+        pageSize,
+        clearedFilters
+      );
       expect(result.current.payments).toEqual([]);
     });
   });
